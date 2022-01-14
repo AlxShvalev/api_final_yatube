@@ -1,6 +1,5 @@
-from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, filters
+from rest_framework import filters, mixins, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 
@@ -8,6 +7,11 @@ from posts.models import Post, Group
 from .serializers import (PostSerializer, CommentSerializer,
                           GroupSerializer, FollowSerializer)
 from .permissions import IsAuthorOrReadOnly
+
+
+class CreateListModelViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                             viewsets.GenericViewSet):
+    pass
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -39,10 +43,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=user, post=post)
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(CreateListModelViewSet):
     serializer_class = FollowSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('following__username',)
+    search_fields = ('user__username', 'following__username',)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
@@ -50,8 +54,4 @@ class FollowViewSet(viewsets.ModelViewSet):
         return user.follower.all()
 
     def perform_create(self, serializer):
-        try:
-            serializer.save(user=self.request.user)
-        except IntegrityError:
-            from django.core.exceptions import SuspiciousOperation
-            raise SuspiciousOperation
+        serializer.save(user=self.request.user)
