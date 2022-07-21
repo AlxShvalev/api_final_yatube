@@ -229,3 +229,6 @@ POST /api/v1/jwt/refresh/
 ```
 POST /api/v1/jwt/verify/
 ```
+
+### Автор
+Алексей Швалев
